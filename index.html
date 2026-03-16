@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catatan Pengeluaran Rumah Tangga</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Catatan Pengeluaran Rumah Tangga</h1>
+        </header>
+
+        <div class="summary-grid">
+            <div class="summary-card total">
+                <h3>Total Seluruhnya</h3>
+                <p id="total-expense">Rp 0</p>
+            </div>
+            <div class="summary-card daily">
+                <h3>Hari Ini</h3>
+                <p id="total-daily">Rp 0</p>
+            </div>
+            <div class="summary-card monthly">
+                <h3>Bulan Ini</h3>
+                <p id="total-monthly">Rp 0</p>
+            </div>
+            <div class="summary-card yearly">
+                <h3>Tahun Ini</h3>
+                <p id="total-yearly">Rp 0</p>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <button id="btn-open-modal" class="btn-primary">Tambah Catatan</button>
+        </div>
+
+        <div class="table-container">
+            <table id="expense-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Deskripsi</th>
+                        <th>Jenis</th>
+                        <th>Nominal</th>
+                        <th>Metode</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="expense-list">
+                    <!-- Data akan dirender di sini via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="modal-form" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tambah Catatan Pengeluaran</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="multi-record-form">
+                    <div id="record-inputs-container">
+                        <!-- Record rows will be added here -->
+                        <div class="record-row">
+                            <div class="form-group">
+                                <label>Tanggal</label>
+                                <input type="date" name="date" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Deskripsi</label>
+                                <input type="text" name="description" placeholder="Beli apa?" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Jenis</label>
+                                <select name="category" required>
+                                    <option value="Makanan">Makanan</option>
+                                    <option value="Transportasi">Transportasi</option>
+                                    <option value="Belanja">Belanja</option>
+                                    <option value="Tagihan">Tagihan</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Nominal</label>
+                                <input type="number" name="amount" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Metode</label>
+                                <select name="payment" required>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Transfer">Transfer</option>
+                                    <option value="QRIS">QRIS</option>
+                                    <option value="E-Wallet">E-Wallet</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="btn-add-row" class="btn-secondary">+ Tambah Catatan Lagi</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-cancel" class="btn-danger">Batalkan</button>
+                <button type="submit" form="multi-record-form" class="btn-success">Simpan Semua Catatan</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
