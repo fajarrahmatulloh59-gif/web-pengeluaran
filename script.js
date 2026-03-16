@@ -1,5 +1,7 @@
 // State Management
 let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+let archives = JSON.parse(localStorage.getItem('archives')) || [];
+let yearlyArchives = JSON.parse(localStorage.getItem('yearlyArchives')) || [];
 
 // DOM Elements
 const modal = document.getElementById('modal-form');
@@ -7,6 +9,12 @@ const btnOpenModal = document.getElementById('btn-open-modal');
 const btnCloseModal = document.querySelector('.close-modal');
 const btnCancel = document.getElementById('btn-cancel');
 const btnAddRow = document.getElementById('btn-add-row');
+const btnCloseMonth = document.getElementById('btn-close-month');
+const btnCloseYear = document.getElementById('btn-close-year');
+const btnArchiveNow = document.getElementById('btn-archive-now');
+const archiveBanner = document.getElementById('archive-banner');
+const archiveList = document.getElementById('archive-list');
+const yearlyArchiveList = document.getElementById('yearly-archive-list');
 const multiRecordForm = document.getElementById('multi-record-form');
 const recordInputsContainer = document.getElementById('record-inputs-container');
 const expenseList = document.getElementById('expense-list');
@@ -17,7 +25,10 @@ const totalYearlyDisplay = document.getElementById('total-yearly');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    checkEndOfMonth();
     renderApp();
+    renderArchives();
+    renderYearlyArchives();
 });
 
 // --- Helper Functions ---
@@ -32,10 +43,17 @@ function formatRupiah(number) {
 
 function saveToLocalStorage() {
     localStorage.setItem('expenses', JSON.stringify(expenses));
+    localStorage.setItem('archives', JSON.stringify(archives));
+    localStorage.setItem('yearlyArchives', JSON.stringify(yearlyArchives));
 }
 
 function getTodayDate() {
     return new Date().toISOString().split('T')[0];
+}
+
+function getMonthName(monthIndex) {
+    const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    return months[monthIndex];
 }
 
 // --- Logic Functions ---
@@ -114,6 +132,259 @@ function deleteExpense(index) {
     }
 }
 
+// --- Archive & PDF Logic ---
+
+function checkEndOfMonth() {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // 1. Banner logic for previous calendar month
+    const hasOldData = expenses.some(item => {
+        const itemDate = new Date(item.date);
+        return itemDate.getMonth() !== currentMonth || itemDate.getFullYear() !== currentYear;
+    });
+
+    if (hasOldData) {
+        archiveBanner.style.display = 'flex';
+    }
+
+    // 2. 30 Days automatic trigger
+    if (expenses.length > 0) {
+        const dates = expenses.map(item => new Date(item.date).getTime());
+        const oldestDate = new Date(Math.min(...dates));
+        const diffTime = Math.abs(now - oldestDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays >= 30) {
+            setTimeout(() => {
+                if (confirm(`Pengeluaran anda sudah genap 1 bulan (sudah ${diffDays} hari). Arsipkan sekarang dan download PDF?`)) {
+                    archiveCurrentMonth(true); // true means trigger download
+                }
+            }, 1000);
+        }
+    }
+
+    // 3. 12 Months automatic trigger
+    if (archives.length >= 12) {
+        setTimeout(() => {
+            if (confirm(`Pengeluaran anda sudah genap 12 bulan (1 tahun). Arsipkan sekarang dan download laporan PDF tahunan?`)) {
+                archiveCurrentYear(true); // true means trigger download
+            }
+        }, 2000);
+    }
+}
+
+function archiveCurrentMonth(autoDownload = false) {
+    if (expenses.length === 0) {
+        alert('Tidak ada data untuk diarsipkan.');
+        return;
+    }
+
+    const latestDate = new Date(expenses[0].date);
+    const label = `${getMonthName(latestDate.getMonth())} ${latestDate.getFullYear()}`;
+    const total = expenses.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+
+    const newArchive = {
+        id: Date.now(),
+        monthYear: label,
+        total: total,
+        items: [...expenses]
+    };
+
+    archives.unshift(newArchive);
+    expenses = [];
+
+    saveToLocalStorage();
+    renderApp();
+    renderArchives();
+    archiveBanner.style.display = 'none';
+    
+    if (autoDownload) {
+        downloadPDF(newArchive.id);
+    }
+    
+    alert(`Data bulan ${label} berhasil diarsipkan.`);
+}
+
+function archiveCurrentYear(autoDownload = false) {
+    if (archives.length === 0) {
+        alert('Tidak ada arsip bulanan untuk dikonsolidasi.');
+        return;
+    }
+
+    const lastArchiveName = archives[0].monthYear;
+    const yearLabel = lastArchiveName.split(' ')[1];
+    const totalYearly = archives.reduce((sum, arc) => sum + arc.total, 0);
+    const allItems = archives.flatMap(arc => arc.items);
+    const monthlySummary = archives.map(arc => ({ month: arc.monthYear, total: arc.total }));
+
+    const newYearlyArchive = {
+        id: Date.now(),
+        year: `Tahun ${yearLabel}`,
+        total: totalYearly,
+        monthlyBreakdown: monthlySummary,
+        items: allItems
+    };
+
+    yearlyArchives.unshift(newYearlyArchive);
+    archives = []; 
+
+    saveToLocalStorage();
+    renderArchives();
+    renderYearlyArchives();
+
+    if (autoDownload) {
+        downloadYearlyPDF(newYearlyArchive.id);
+    }
+
+    alert(`Data tahun ${yearLabel} berhasil diarsipkan ke laporan tahunan.`);
+}
+
+function renderArchives() {
+    archiveList.innerHTML = '';
+    if (archives.length === 0) {
+        archiveList.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada arsip bulanan.</td></tr>';
+        return;
+    }
+    archives.forEach(archive => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${archive.monthYear}</td>
+            <td>${formatRupiah(archive.total)}</td>
+            <td>
+                <button class="btn-pdf" onclick="downloadPDF(${archive.id})">Download PDF</button>
+                <button class="btn-delete" style="margin-left:5px" onclick="deleteArchive(${archive.id})">Hapus</button>
+            </td>
+        `;
+        archiveList.appendChild(tr);
+    });
+}
+
+function renderYearlyArchives() {
+    yearlyArchiveList.innerHTML = '';
+    if (yearlyArchives.length === 0) {
+        yearlyArchiveList.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada arsip tahunan.</td></tr>';
+        return;
+    }
+    yearlyArchives.forEach(yearArc => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${yearArc.year}</td>
+            <td>${formatRupiah(yearArc.total)}</td>
+            <td>
+                <button class="btn-pdf" onclick="downloadYearlyPDF(${yearArc.id})">Download PDF Tahunan</button>
+                <button class="btn-delete" style="margin-left:5px" onclick="deleteYearlyArchive(${yearArc.id})">Hapus</button>
+            </td>
+        `;
+        yearlyArchiveList.appendChild(tr);
+    });
+}
+
+function deleteArchive(id) {
+    if (confirm('Hapus arsip ini selamanya?')) {
+        archives = archives.filter(a => a.id !== id);
+        saveToLocalStorage();
+        renderArchives();
+    }
+}
+
+function deleteYearlyArchive(id) {
+    if (confirm('Hapus arsip TAHUNAN ini selamanya?')) {
+        yearlyArchives = yearlyArchives.filter(ya => ya.id !== id);
+        saveToLocalStorage();
+        renderYearlyArchives();
+    }
+}
+
+function downloadPDF(id) {
+    const archive = archives.find(a => a.id === id) || yearlyArchives.find(ya => ya.items && ya.id === id); // fallback search
+    const dataToUse = archive || archives[0]; // safety fallback
+    
+    if (!dataToUse) return;
+
+    const { jsPDF } = window.jspdf;
+    const doc = jsPDF();
+
+    doc.setFontSize(18);
+    doc.text(`Rekapan Pengeluaran Rumah Tangga`, 14, 20);
+    doc.setFontSize(14);
+    doc.text(`Periode: ${dataToUse.monthYear || 'Arsip'}`, 14, 30);
+    doc.text(`Total Pengeluaran: ${formatRupiah(dataToUse.total)}`, 14, 40);
+
+    const tableData = dataToUse.items.map(item => [
+        item.date,
+        item.description,
+        item.category,
+        formatRupiah(item.amount),
+        item.payment
+    ]);
+
+    doc.autoTable({
+        startY: 50,
+        head: [['Tanggal', 'Deskripsi', 'Jenis', 'Nominal', 'Metode']],
+        body: tableData,
+    });
+
+    doc.save(`Pengeluaran_${(dataToUse.monthYear || 'Arsip').replace(' ', '_')}.pdf`);
+}
+
+function downloadYearlyPDF(id) {
+    const yearArc = yearlyArchives.find(ya => ya.id === id);
+    if (!yearArc) return;
+
+    const { jsPDF } = window.jspdf;
+    const doc = jsPDF();
+
+    doc.setFontSize(18);
+    doc.text(`Laporan Pengeluaran Rumah Tangga TAHUNAN`, 14, 20);
+    doc.setFontSize(14);
+    doc.text(`Periode: ${yearArc.year}`, 14, 30);
+    doc.text(`Total Pengeluaran Setahun: ${formatRupiah(yearArc.total)}`, 14, 40);
+
+    doc.text(`Ringkasan Per Bulan:`, 14, 55);
+    const summaryData = yearArc.monthlyBreakdown.map(m => [m.month, formatRupiah(m.total)]);
+    
+    doc.autoTable({
+        startY: 60,
+        head: [['Bulan', 'Total Pengeluaran']],
+        body: summaryData,
+    });
+
+    doc.addPage();
+    doc.text(`Detail Transaksi Setahun:`, 14, 20);
+    const detailData = yearArc.items.map(item => [
+        item.date,
+        item.description,
+        item.category,
+        formatRupiah(item.amount),
+        item.payment
+    ]);
+
+    doc.autoTable({
+        startY: 30,
+        head: [['Tanggal', 'Deskripsi', 'Jenis', 'Nominal', 'Metode']],
+        body: detailData,
+    });
+
+    doc.save(`Laporan_Tahunan_${yearArc.year.replace(' ', '_')}.pdf`);
+}
+
+// Event Listeners for Archive
+btnCloseMonth.onclick = () => {
+    if (confirm('Arsipkan pengeluaran bulan ini dan download PDF?')) {
+        archiveCurrentMonth(true);
+    }
+};
+
+btnCloseYear.onclick = () => {
+    if (confirm('Arsipkan pengeluaran TAHUNAN ini dan download PDF?')) {
+        archiveCurrentYear(true);
+    }
+};
+
+btnArchiveNow.onclick = () => archiveCurrentMonth(true);
+
 // --- Modal & Form Logic ---
 
 btnOpenModal.onclick = () => {
@@ -134,7 +405,7 @@ window.onclick = (event) => {
 
 function resetForm() {
     recordInputsContainer.innerHTML = '';
-    addRow(); // Start with one empty row
+    addRow(); 
 }
 
 function addRow() {
@@ -198,10 +469,8 @@ btnAddRow.onclick = addRow;
 
 multiRecordForm.onsubmit = (e) => {
     e.preventDefault();
-
     const rows = document.querySelectorAll('.record-row');
     const newRecords = [];
-
     rows.forEach(row => {
         const record = {
             date: row.querySelector('[name="date"]').value,
@@ -212,7 +481,6 @@ multiRecordForm.onsubmit = (e) => {
         };
         newRecords.push(record);
     });
-
     expenses = [...expenses, ...newRecords];
     saveToLocalStorage();
     renderApp();

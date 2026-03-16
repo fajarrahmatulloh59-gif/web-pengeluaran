@@ -6,12 +6,21 @@
     <title>Catatan Pengeluaran Rumah Tangga</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Catatan Pengeluaran Rumah Tangga</h1>
         </header>
+
+        <!-- Archive Prompt Banner (Hidden by default) -->
+        <div id="archive-banner" class="banner" style="display: none;">
+            <p>Bulan lalu telah berakhir. Ingin mengarsipkan data dan mengosongkan tabel?</p>
+            <button id="btn-archive-now" class="btn-success">Arsipkan & Reset</button>
+        </div>
 
         <div class="summary-grid">
             <div class="summary-card total">
@@ -33,6 +42,7 @@
         </div>
 
         <div class="action-bar">
+            <button id="btn-close-month" class="btn-secondary">Tutup & Arsipkan Bulan Ini</button>
             <button id="btn-open-modal" class="btn-primary">Tambah Catatan</button>
         </div>
 
@@ -52,6 +62,47 @@
                     <!-- Data akan dirender di sini via JS -->
                 </tbody>
             </table>
+        </div>
+
+        <div class="archive-section">
+            <header>
+                <h2>Arsip Bulanan (History)</h2>
+                <button id="btn-close-year" class="btn-danger" style="margin-bottom: 15px;">Tutup & Arsipkan Tahun Ini</button>
+            </header>
+            <div class="table-container">
+                <table id="archive-table">
+                    <thead>
+                        <tr>
+                            <th>Bulan & Tahun</th>
+                            <th>Total Pengeluaran</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archive-list">
+                        <!-- Archives will be rendered here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="archive-section">
+            <header>
+                <h2>Arsip Tahunan</h2>
+            </header>
+            <div class="table-container">
+                <table id="yearly-archive-table">
+                    <thead>
+                        <tr>
+                            <th>Tahun</th>
+                            <th>Total Pengeluaran Setahun</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="yearly-archive-list">
+                        <!-- Yearly Archives will be rendered here -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
