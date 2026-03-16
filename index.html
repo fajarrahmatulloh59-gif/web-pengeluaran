@@ -45,29 +45,42 @@
         </div>
 
         <div class="summary-grid">
-            <div class="summary-card total">
-                <h3>Total Seluruhnya</h3>
-                <p id="total-expense">Rp 0</p>
+            <div class="summary-card balance">
+                <h3>Saldo Keseluruhan</h3>
+                <p id="total-balance">Rp 0</p>
             </div>
-            <div class="summary-card daily">
-                <h3>Hari Ini</h3>
-                <p id="total-daily">Rp 0</p>
+            <div class="summary-card monthly-balance">
+                <h3>Saldo Bulan Ini</h3>
+                <p id="monthly-balance">Rp 0</p>
+            </div>
+            <div class="summary-card monthly-income">
+                <h3>Pemasukkan Bulan Ini</h3>
+                <p id="monthly-income">Rp 0</p>
             </div>
             <div class="summary-card monthly">
-                <h3>Bulan Ini</h3>
+                <h3>Pengeluaran Bulan Ini</h3>
                 <p id="total-monthly">Rp 0</p>
             </div>
+            <div class="summary-card daily">
+                <h3>Pengeluaran Hari Ini</h3>
+                <p id="total-daily">Rp 0</p>
+            </div>
             <div class="summary-card yearly">
-                <h3>Tahun Ini</h3>
+                <h3>Pengeluaran Tahun Ini</h3>
                 <p id="total-yearly">Rp 0</p>
             </div>
         </div>
 
         <div class="action-bar">
-            <button id="btn-close-month" class="btn-secondary">Tutup & Arsipkan Bulan Ini</button>
-            <button id="btn-open-modal" class="btn-primary">Tambah Catatan</button>
+            <button id="btn-close-year" class="btn-danger">Tutup Tahun</button>
+            <button id="btn-close-month" class="btn-secondary">Tutup Bulan</button>
+            <button id="btn-open-modal-income" class="btn-success">Tambah Pemasukkan</button>
+            <button id="btn-open-modal" class="btn-primary">Tambah Pengeluaran</button>
         </div>
 
+        <div class="section-title">
+            <h2>Daftar Pengeluaran</h2>
+        </div>
         <div class="table-container">
             <table id="expense-table">
                 <thead>
@@ -81,6 +94,25 @@
                     </tr>
                 </thead>
                 <tbody id="expense-list">
+                    <!-- Data akan dirender di sini via JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-title">
+            <h2>Daftar Pemasukkan</h2>
+        </div>
+        <div class="table-container">
+            <table id="income-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Deskripsi</th>
+                        <th>Nominal</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="income-list">
                     <!-- Data akan dirender di sini via JS -->
                 </tbody>
             </table>
@@ -128,7 +160,37 @@
         </div>
     </div>
 
-    <!-- Modal Form -->
+    <!-- Income Modal Form -->
+    <div id="modal-income" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tambah Pemasukkan</h2>
+                <span class="close-modal-income" style="cursor: pointer; font-size: 28px;">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="income-form">
+                    <div class="form-group">
+                        <label>Tanggal</label>
+                        <input type="date" id="income-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Deskripsi</label>
+                        <input type="text" id="income-description" placeholder="Gaji, Bonus, dll" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nominal</label>
+                        <input type="number" id="income-amount" placeholder="0" min="1" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="btn-cancel-income" class="btn-danger">Batalkan</button>
+                        <button type="submit" class="btn-success">Simpan Pemasukkan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form (Expenses) -->
     <div id="modal-form" class="modal">
         <div class="modal-content">
             <div class="modal-header">

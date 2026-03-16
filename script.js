@@ -1,5 +1,6 @@
 // State Management
 let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+let incomes = JSON.parse(localStorage.getItem('incomes')) || [];
 let archives = JSON.parse(localStorage.getItem('archives')) || [];
 let yearlyArchives = JSON.parse(localStorage.getItem('yearlyArchives')) || [];
 let userEmail = localStorage.getItem('userEmail') || null;
@@ -13,9 +14,14 @@ const btnLogout = document.getElementById('btn-logout');
 const currentUserEmailDisplay = document.getElementById('current-user-email');
 
 const modal = document.getElementById('modal-form');
+const modalIncome = document.getElementById('modal-income');
 const btnOpenModal = document.getElementById('btn-open-modal');
+const btnOpenModalIncome = document.getElementById('btn-open-modal-income');
 const btnCloseModal = document.querySelector('.close-modal');
+const btnCloseModalIncome = document.querySelector('.close-modal-income');
 const btnCancel = document.getElementById('btn-cancel');
+const btnCancelIncome = document.getElementById('btn-cancel-income');
+
 const btnAddRow = document.getElementById('btn-add-row');
 const btnCloseMonth = document.getElementById('btn-close-month');
 const btnCloseYear = document.getElementById('btn-close-year');
@@ -23,10 +29,19 @@ const btnArchiveNow = document.getElementById('btn-archive-now');
 const archiveBanner = document.getElementById('archive-banner');
 const archiveList = document.getElementById('archive-list');
 const yearlyArchiveList = document.getElementById('yearly-archive-list');
+
 const multiRecordForm = document.getElementById('multi-record-form');
+const incomeForm = document.getElementById('income-form');
 const recordInputsContainer = document.getElementById('record-inputs-container');
+
 const expenseList = document.getElementById('expense-list');
+const incomeList = document.getElementById('income-list');
+
 const totalExpenseDisplay = document.getElementById('total-expense');
+const totalIncomeDisplay = document.getElementById('total-income');
+const totalBalanceDisplay = document.getElementById('total-balance');
+const monthlyIncomeDisplay = document.getElementById('monthly-income');
+const monthlyBalanceDisplay = document.getElementById('monthly-balance');
 const totalDailyDisplay = document.getElementById('total-daily');
 const totalMonthlyDisplay = document.getElementById('total-monthly');
 const totalYearlyDisplay = document.getElementById('total-yearly');
@@ -40,38 +55,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function checkAuth() {
     if (userEmail) {
-        loginPage.style.display = 'none';
-        appContainer.style.display = 'block';
-        currentUserEmailDisplay.textContent = `User: ${userEmail}`;
+        if (loginPage) loginPage.style.display = 'none';
+        if (appContainer) appContainer.style.display = 'block';
+        if (currentUserEmailDisplay) currentUserEmailDisplay.textContent = `User: ${userEmail}`;
         
-        // Only run app logic if authenticated
         checkEndOfMonth();
         renderApp();
         renderArchives();
         renderYearlyArchives();
     } else {
-        loginPage.style.display = 'flex';
-        appContainer.style.display = 'none';
+        if (loginPage) loginPage.style.display = 'flex';
+        if (appContainer) appContainer.style.display = 'none';
     }
 }
 
-loginForm.onsubmit = (e) => {
-    e.preventDefault();
-    const email = loginEmailInput.value.trim();
-    if (email) {
-        userEmail = email;
-        localStorage.setItem('userEmail', email);
-        checkAuth();
-    }
-};
+if (loginForm) {
+    loginForm.onsubmit = (e) => {
+        e.preventDefault();
+        const email = loginEmailInput.value.trim();
+        if (email) {
+            userEmail = email;
+            localStorage.setItem('userEmail', email);
+            checkAuth();
+        }
+    };
+}
 
-btnLogout.onclick = () => {
-    if (confirm('Apakah Anda yakin ingin logout?')) {
-        localStorage.removeItem('userEmail');
-        userEmail = null;
-        window.location.reload(); 
-    }
-};
+if (btnLogout) {
+    btnLogout.onclick = () => {
+        if (confirm('Apakah Anda yakin ingin logout?')) {
+            localStorage.removeItem('userEmail');
+            userEmail = null;
+            window.location.reload(); 
+        }
+    };
+}
 
 // --- Helper Functions ---
 
@@ -85,6 +103,7 @@ function formatRupiah(number) {
 
 function saveToLocalStorage() {
     localStorage.setItem('expenses', JSON.stringify(expenses));
+    localStorage.setItem('incomes', JSON.stringify(incomes));
     localStorage.setItem('archives', JSON.stringify(archives));
     localStorage.setItem('yearlyArchives', JSON.stringify(yearlyArchives));
 }
@@ -101,14 +120,14 @@ function getMonthName(monthIndex) {
 // --- Logic Functions ---
 
 function renderApp() {
-    renderTable();
+    renderExpenses();
+    renderIncomes();
     updateTotal();
 }
 
-function renderTable() {
+function renderExpenses() {
+    if (!expenseList) return;
     expenseList.innerHTML = '';
-    
-    // Sort by date descending
     const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     if (sortedExpenses.length === 0) {
@@ -116,7 +135,7 @@ function renderTable() {
         return;
     }
 
-    sortedExpenses.forEach((item, index) => {
+    sortedExpenses.forEach((item) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${item.date}</td>
@@ -132,43 +151,79 @@ function renderTable() {
     });
 }
 
+function renderIncomes() {
+    if (!incomeList) return;
+    incomeList.innerHTML = '';
+    const sortedIncomes = [...incomes].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (sortedIncomes.length === 0) {
+        incomeList.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada catatan pemasukkan.</td></tr>';
+        return;
+    }
+
+    sortedIncomes.forEach((item) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${item.date}</td>
+            <td>${item.description}</td>
+            <td>${formatRupiah(item.amount)}</td>
+            <td>
+                <button class="btn-delete" onclick="deleteIncome(${incomes.indexOf(item)})">Hapus</button>
+            </td>
+        `;
+        incomeList.appendChild(tr);
+    });
+}
+
 function updateTotal() {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
-    const thisMonthStr = todayStr.substring(0, 7); // YYYY-MM
-    const thisYearStr = todayStr.substring(0, 4); // YYYY
+    const thisMonthStr = todayStr.substring(0, 7); 
+    const thisYearStr = todayStr.substring(0, 4); 
 
-    let total = 0;
-    let daily = 0;
-    let monthly = 0;
-    let yearly = 0;
+    let totalExp = 0;
+    let totalInc = 0;
+    let monthlyExp = 0;
+    let monthlyInc = 0;
+    let dailyExp = 0;
+    let yearlyExp = 0;
 
     expenses.forEach(item => {
         const amount = parseFloat(item.amount);
-        total += amount;
-
-        if (item.date === todayStr) {
-            daily += amount;
-        }
-        
-        if (item.date.startsWith(thisMonthStr)) {
-            monthly += amount;
-        }
-
-        if (item.date.startsWith(thisYearStr)) {
-            yearly += amount;
-        }
+        totalExp += amount;
+        if (item.date === todayStr) dailyExp += amount;
+        if (item.date.startsWith(thisMonthStr)) monthlyExp += amount;
+        if (item.date.startsWith(thisYearStr)) yearlyExp += amount;
     });
 
-    totalExpenseDisplay.textContent = formatRupiah(total);
-    totalDailyDisplay.textContent = formatRupiah(daily);
-    totalMonthlyDisplay.textContent = formatRupiah(monthly);
-    totalYearlyDisplay.textContent = formatRupiah(yearly);
+    incomes.forEach(item => {
+        const amount = parseFloat(item.amount);
+        totalInc += amount;
+        if (item.date.startsWith(thisMonthStr)) monthlyInc += amount;
+    });
+
+    if (totalExpenseDisplay) totalExpenseDisplay.textContent = formatRupiah(totalExp);
+    if (totalIncomeDisplay) totalIncomeDisplay.textContent = formatRupiah(totalInc);
+    if (monthlyIncomeDisplay) monthlyIncomeDisplay.textContent = formatRupiah(monthlyInc);
+    if (monthlyBalanceDisplay) monthlyBalanceDisplay.textContent = formatRupiah(monthlyInc - monthlyExp);
+    
+    if (totalBalanceDisplay) totalBalanceDisplay.textContent = formatRupiah(totalInc - totalExp);
+    if (totalDailyDisplay) totalDailyDisplay.textContent = formatRupiah(dailyExp);
+    if (totalMonthlyDisplay) totalMonthlyDisplay.textContent = formatRupiah(monthlyExp);
+    if (totalYearlyDisplay) totalYearlyDisplay.textContent = formatRupiah(yearlyExp);
 }
 
 function deleteExpense(index) {
-    if (confirm('Apakah Anda yakin ingin menghapus catatan ini?')) {
+    if (confirm('Hapus catatan pengeluaran ini?')) {
         expenses.splice(index, 1);
+        saveToLocalStorage();
+        renderApp();
+    }
+}
+
+function deleteIncome(index) {
+    if (confirm('Hapus catatan pemasukkan ini?')) {
+        incomes.splice(index, 1);
         saveToLocalStorage();
         renderApp();
     }
@@ -177,21 +232,21 @@ function deleteExpense(index) {
 // --- Archive & PDF Logic ---
 
 function checkEndOfMonth() {
+    if (expenses.length === 0 && incomes.length === 0) return;
+
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    // 1. Banner logic for previous calendar month
     const hasOldData = expenses.some(item => {
         const itemDate = new Date(item.date);
         return itemDate.getMonth() !== currentMonth || itemDate.getFullYear() !== currentYear;
     });
 
-    if (hasOldData) {
+    if (hasOldData && archiveBanner) {
         archiveBanner.style.display = 'flex';
     }
 
-    // 2. 30 Days automatic trigger
     if (expenses.length > 0) {
         const dates = expenses.map(item => new Date(item.date).getTime());
         const oldestDate = new Date(Math.min(...dates));
@@ -201,46 +256,50 @@ function checkEndOfMonth() {
         if (diffDays >= 30) {
             setTimeout(() => {
                 if (confirm(`Pengeluaran anda sudah genap 1 bulan (sudah ${diffDays} hari). Arsipkan sekarang dan download PDF?`)) {
-                    archiveCurrentMonth(true); // true means trigger download
+                    archiveCurrentMonth(true); 
                 }
             }, 1000);
         }
     }
 
-    // 3. 12 Months automatic trigger
     if (archives.length >= 12) {
         setTimeout(() => {
             if (confirm(`Pengeluaran anda sudah genap 12 bulan (1 tahun). Arsipkan sekarang dan download laporan PDF tahunan?`)) {
-                archiveCurrentYear(true); // true means trigger download
+                archiveCurrentYear(true); 
             }
         }, 2000);
     }
 }
 
 function archiveCurrentMonth(autoDownload = false) {
-    if (expenses.length === 0) {
+    if (expenses.length === 0 && incomes.length === 0) {
         alert('Tidak ada data untuk diarsipkan.');
         return;
     }
 
-    const latestDate = new Date(expenses[0].date);
+    const latestDate = expenses.length > 0 ? new Date(expenses[0].date) : new Date();
     const label = `${getMonthName(latestDate.getMonth())} ${latestDate.getFullYear()}`;
-    const total = expenses.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+    const totalExp = expenses.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+    const totalInc = incomes.reduce((sum, item) => sum + parseFloat(item.amount), 0);
 
     const newArchive = {
         id: Date.now(),
         monthYear: label,
-        total: total,
-        items: [...expenses]
+        totalExpense: totalExp,
+        totalIncome: totalInc,
+        balance: totalInc - totalExp,
+        expenses: [...expenses],
+        incomes: [...incomes]
     };
 
     archives.unshift(newArchive);
     expenses = [];
+    incomes = [];
 
     saveToLocalStorage();
     renderApp();
     renderArchives();
-    archiveBanner.style.display = 'none';
+    if (archiveBanner) archiveBanner.style.display = 'none';
     
     if (autoDownload) {
         downloadPDF(newArchive.id);
@@ -257,16 +316,26 @@ function archiveCurrentYear(autoDownload = false) {
 
     const lastArchiveName = archives[0].monthYear;
     const yearLabel = lastArchiveName.split(' ')[1];
-    const totalYearly = archives.reduce((sum, arc) => sum + arc.total, 0);
-    const allItems = archives.flatMap(arc => arc.items);
-    const monthlySummary = archives.map(arc => ({ month: arc.monthYear, total: arc.total }));
+    const totalExp = archives.reduce((sum, arc) => sum + arc.totalExpense, 0);
+    const totalInc = archives.reduce((sum, arc) => sum + arc.totalIncome, 0);
+    const allExp = archives.flatMap(arc => arc.expenses);
+    const allInc = archives.flatMap(arc => arc.incomes);
+    
+    const monthlySummary = archives.map(arc => ({ 
+        month: arc.monthYear, 
+        exp: arc.totalExpense,
+        inc: arc.totalIncome
+    }));
 
     const newYearlyArchive = {
         id: Date.now(),
         year: `Tahun ${yearLabel}`,
-        total: totalYearly,
+        totalExpense: totalExp,
+        totalIncome: totalInc,
+        balance: totalInc - totalExp,
         monthlyBreakdown: monthlySummary,
-        items: allItems
+        expenses: allExp,
+        incomes: allInc
     };
 
     yearlyArchives.unshift(newYearlyArchive);
@@ -284,6 +353,7 @@ function archiveCurrentYear(autoDownload = false) {
 }
 
 function renderArchives() {
+    if (!archiveList) return;
     archiveList.innerHTML = '';
     if (archives.length === 0) {
         archiveList.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada arsip bulanan.</td></tr>';
@@ -293,7 +363,7 @@ function renderArchives() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${archive.monthYear}</td>
-            <td>${formatRupiah(archive.total)}</td>
+            <td>${formatRupiah(archive.totalExpense)}</td>
             <td>
                 <button class="btn-pdf" onclick="downloadPDF(${archive.id})">Download PDF</button>
                 <button class="btn-delete" style="margin-left:5px" onclick="deleteArchive(${archive.id})">Hapus</button>
@@ -304,6 +374,7 @@ function renderArchives() {
 }
 
 function renderYearlyArchives() {
+    if (!yearlyArchiveList) return;
     yearlyArchiveList.innerHTML = '';
     if (yearlyArchives.length === 0) {
         yearlyArchiveList.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada arsip tahunan.</td></tr>';
@@ -313,7 +384,7 @@ function renderYearlyArchives() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${yearArc.year}</td>
-            <td>${formatRupiah(yearArc.total)}</td>
+            <td>${formatRupiah(yearArc.totalExpense)}</td>
             <td>
                 <button class="btn-pdf" onclick="downloadYearlyPDF(${yearArc.id})">Download PDF Tahunan</button>
                 <button class="btn-delete" style="margin-left:5px" onclick="deleteYearlyArchive(${yearArc.id})">Hapus</button>
@@ -340,35 +411,38 @@ function deleteYearlyArchive(id) {
 }
 
 function downloadPDF(id) {
-    const archive = archives.find(a => a.id === id) || yearlyArchives.find(ya => ya.items && ya.id === id); 
-    const dataToUse = archive || archives[0]; 
-    
-    if (!dataToUse) return;
+    const archive = archives.find(a => a.id === id);
+    if (!archive) return;
 
     const { jsPDF } = window.jspdf;
     const doc = jsPDF();
 
     doc.setFontSize(18);
-    doc.text(`Rekapan Pengeluaran Rumah Tangga`, 14, 20);
-    doc.setFontSize(14);
-    doc.text(`Periode: ${dataToUse.monthYear || 'Arsip'}`, 14, 30);
-    doc.text(`Total Pengeluaran: ${formatRupiah(dataToUse.total)}`, 14, 40);
+    doc.text(`Rekapan Keuangan Rumah Tangga`, 14, 20);
+    doc.setFontSize(12);
+    doc.text(`Periode: ${archive.monthYear}`, 14, 30);
+    doc.text(`Total Pemasukkan: ${formatRupiah(archive.totalIncome)}`, 14, 38);
+    doc.text(`Total Pengeluaran: ${formatRupiah(archive.totalExpense)}`, 14, 46);
+    doc.text(`Sisa Saldo: ${formatRupiah(archive.balance)}`, 14, 54);
 
-    const tableData = dataToUse.items.map(item => [
-        item.date,
-        item.description,
-        item.category,
-        formatRupiah(item.amount),
-        item.payment
-    ]);
-
+    doc.text(`Daftar Pengeluaran:`, 14, 65);
+    const expData = archive.expenses.map(item => [item.date, item.description, item.category, formatRupiah(item.amount), item.payment]);
     doc.autoTable({
-        startY: 50,
+        startY: 70,
         head: [['Tanggal', 'Deskripsi', 'Jenis', 'Nominal', 'Metode']],
-        body: tableData,
+        body: expData,
     });
 
-    doc.save(`Pengeluaran_${(dataToUse.monthYear || 'Arsip').replace(' ', '_')}.pdf`);
+    const finalY = doc.lastAutoTable.finalY || 70;
+    doc.text(`Daftar Pemasukkan:`, 14, finalY + 15);
+    const incData = archive.incomes.map(item => [item.date, item.description, formatRupiah(item.amount)]);
+    doc.autoTable({
+        startY: finalY + 20,
+        head: [['Tanggal', 'Deskripsi', 'Nominal']],
+        body: incData,
+    });
+
+    doc.save(`Keuangan_${archive.monthYear.replace(' ', '_')}.pdf`);
 }
 
 function downloadYearlyPDF(id) {
@@ -379,112 +453,94 @@ function downloadYearlyPDF(id) {
     const doc = jsPDF();
 
     doc.setFontSize(18);
-    doc.text(`Laporan Pengeluaran Rumah Tangga TAHUNAN`, 14, 20);
-    doc.setFontSize(14);
+    doc.text(`Laporan Keuangan Rumah Tangga TAHUNAN`, 14, 20);
+    doc.setFontSize(12);
     doc.text(`Periode: ${yearArc.year}`, 14, 30);
-    doc.text(`Total Pengeluaran Setahun: ${formatRupiah(yearArc.total)}`, 14, 40);
+    doc.text(`Total Pemasukkan Setahun: ${formatRupiah(yearArc.totalIncome)}`, 14, 38);
+    doc.text(`Total Pengeluaran Setahun: ${formatRupiah(yearArc.totalExpense)}`, 14, 46);
+    doc.text(`Sisa Saldo: ${formatRupiah(yearArc.balance)}`, 14, 54);
 
-    doc.text(`Ringkasan Per Bulan:`, 14, 55);
-    const summaryData = yearArc.monthlyBreakdown.map(m => [m.month, formatRupiah(m.total)]);
-    
+    doc.text(`Ringkasan Per Bulan:`, 14, 65);
+    const summaryData = yearArc.monthlyBreakdown.map(m => [m.month, formatRupiah(m.inc), formatRupiah(m.exp)]);
     doc.autoTable({
-        startY: 60,
-        head: [['Bulan', 'Total Pengeluaran']],
+        startY: 70,
+        head: [['Bulan', 'Pemasukkan', 'Pengeluaran']],
         body: summaryData,
     });
 
     doc.addPage();
-    doc.text(`Detail Transaksi Setahun:`, 14, 20);
-    const detailData = yearArc.items.map(item => [
-        item.date,
-        item.description,
-        item.category,
-        formatRupiah(item.amount),
-        item.payment
-    ]);
+    doc.text(`Detail Seluruh Transaksi Setahun:`, 14, 20);
+    const combined = [
+        ...yearArc.expenses.map(i => ({...i, type: 'Pengeluaran'})),
+        ...yearArc.incomes.map(i => ({...i, type: 'Pemasukkan'}))
+    ].sort((a,b) => new Date(a.date) - new Date(b.date));
 
     doc.autoTable({
         startY: 30,
-        head: [['Tanggal', 'Deskripsi', 'Jenis', 'Nominal', 'Metode']],
-        body: detailData,
+        head: [['Tanggal', 'Deskripsi', 'Tipe', 'Nominal']],
+        body: combined.map(i => [i.date, i.description, i.type, formatRupiah(i.amount)]),
     });
 
     doc.save(`Laporan_Tahunan_${yearArc.year.replace(' ', '_')}.pdf`);
 }
 
-// Event Listeners for Archive
-btnCloseMonth.onclick = () => {
-    if (confirm('Arsipkan pengeluaran bulan ini dan download PDF?')) {
-        archiveCurrentMonth(true);
-    }
-};
-
-btnCloseYear.onclick = () => {
-    if (confirm('Arsipkan pengeluaran TAHUNAN ini dan download PDF?')) {
-        archiveCurrentYear(true);
-    }
-};
-
-btnArchiveNow.onclick = () => archiveCurrentMonth(true);
+// Event Listeners
+if (btnCloseMonth) {
+    btnCloseMonth.onclick = () => {
+        if (confirm('Arsipkan keuangan bulan ini dan download PDF?')) archiveCurrentMonth(true);
+    };
+}
+if (btnCloseYear) {
+    btnCloseYear.onclick = () => {
+        if (confirm('Arsipkan keuangan TAHUNAN ini dan download PDF?')) archiveCurrentYear(true);
+    };
+}
+if (btnArchiveNow) btnArchiveNow.onclick = () => archiveCurrentMonth(true);
 
 // --- Modal & Form Logic ---
 
-btnOpenModal.onclick = () => {
-    modal.style.display = 'block';
-    resetForm();
-};
+if (btnOpenModal) {
+    btnOpenModal.onclick = () => { 
+        if (modal) modal.style.display = 'block'; 
+        resetForm(); 
+    };
+}
 
-const closeModal = () => {
-    modal.style.display = 'none';
-};
+if (btnOpenModalIncome) {
+    btnOpenModalIncome.onclick = () => { 
+        if (modalIncome) modalIncome.style.display = 'block'; 
+        const dateInput = document.getElementById('income-date');
+        if (dateInput) dateInput.value = getTodayDate(); 
+    };
+}
 
-btnCloseModal.onclick = closeModal;
-btnCancel.onclick = closeModal;
+if (btnCloseModal) btnCloseModal.onclick = () => { if (modal) modal.style.display = 'none'; };
+if (btnCloseModalIncome) btnCloseModalIncome.onclick = () => { if (modalIncome) modalIncome.style.display = 'none'; };
+if (btnCancel) btnCancel.onclick = () => { if (modal) modal.style.display = 'none'; };
+if (btnCancelIncome) btnCancelIncome.onclick = () => { if (modalIncome) modalIncome.style.display = 'none'; };
 
 window.onclick = (event) => {
-    if (event.target == modal) closeModal();
+    if (event.target == modal) modal.style.display = 'none';
+    if (event.target == modalIncome) modalIncome.style.display = 'none';
 };
 
-function resetForm() {
-    recordInputsContainer.innerHTML = '';
-    addRow(); 
+function resetForm() { 
+    if (recordInputsContainer) {
+        recordInputsContainer.innerHTML = ''; 
+        addRow(); 
+    }
 }
 
 function addRow() {
+    if (!recordInputsContainer) return;
     const row = document.createElement('div');
     row.className = 'record-row';
     row.innerHTML = `
-        <div class="form-group">
-            <label>Tanggal</label>
-            <input type="date" name="date" value="${getTodayDate()}" required>
-        </div>
-        <div class="form-group">
-            <label>Deskripsi</label>
-            <input type="text" name="description" placeholder="Beli apa?" required>
-        </div>
-        <div class="form-group">
-            <label>Jenis</label>
-            <select name="category" required>
-                <option value="Makanan">Makanan</option>
-                <option value="Transportasi">Transportasi</option>
-                <option value="Belanja">Belanja</option>
-                <option value="Tagihan">Tagihan</option>
-                <option value="Lainnya">Lainnya</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Nominal</label>
-            <input type="number" name="amount" placeholder="0" min="1" required>
-        </div>
-        <div class="form-group">
-            <label>Metode</label>
-            <select name="payment" required>
-                <option value="Cash">Cash</option>
-                <option value="Transfer">Transfer</option>
-                <option value="QRIS">QRIS</option>
-                <option value="E-Wallet">E-Wallet</option>
-            </select>
-        </div>
+        <div class="form-group"><label>Tanggal</label><input type="date" name="date" value="${getTodayDate()}" required></div>
+        <div class="form-group"><label>Deskripsi</label><input type="text" name="description" placeholder="Beli apa?" required></div>
+        <div class="form-group"><label>Jenis</label><select name="category" required><option value="Makanan">Makanan</option><option value="Transportasi">Transportasi</option><option value="Belanja">Belanja</option><option value="Tagihan">Tagihan</option><option value="Lainnya">Lainnya</option></select></div>
+        <div class="form-group"><label>Nominal</label><input type="number" name="amount" placeholder="0" min="1" required></div>
+        <div class="form-group"><label>Metode</label><select name="payment" required><option value="Cash">Cash</option><option value="Transfer">Transfer</option><option value="QRIS">QRIS</option><option value="E-Wallet">E-Wallet</option></select></div>
         <button type="button" class="btn-remove-row" onclick="removeRow(this)">&times;</button>
     `;
     recordInputsContainer.appendChild(row);
@@ -493,38 +549,52 @@ function addRow() {
 
 function removeRow(btn) {
     const rows = document.querySelectorAll('.record-row');
-    if (rows.length > 1) {
-        btn.parentElement.remove();
-        updateRemoveButtons();
-    }
+    if (rows.length > 1) { btn.parentElement.remove(); updateRemoveButtons(); }
 }
 
 function updateRemoveButtons() {
     const rows = document.querySelectorAll('.record-row');
-    const removeBtns = document.querySelectorAll('.btn-remove-row');
-    removeBtns.forEach(btn => {
-        btn.style.display = rows.length > 1 ? 'flex' : 'none';
-    });
+    document.querySelectorAll('.btn-remove-row').forEach(btn => btn.style.display = rows.length > 1 ? 'flex' : 'none');
 }
 
-btnAddRow.onclick = addRow;
+if (btnAddRow) btnAddRow.onclick = addRow;
 
-multiRecordForm.onsubmit = (e) => {
-    e.preventDefault();
-    const rows = document.querySelectorAll('.record-row');
-    const newRecords = [];
-    rows.forEach(row => {
-        const record = {
-            date: row.querySelector('[name="date"]').value,
-            description: row.querySelector('[name="description"]').value,
-            category: row.querySelector('[name="category"]').value,
-            amount: parseFloat(row.querySelector('[name="amount"]').value),
-            payment: row.querySelector('[name="payment"]').value
-        };
-        newRecords.push(record);
-    });
-    expenses = [...expenses, ...newRecords];
-    saveToLocalStorage();
-    renderApp();
-    closeModal();
-};
+if (multiRecordForm) {
+    multiRecordForm.onsubmit = (e) => {
+        e.preventDefault();
+        const rows = document.querySelectorAll('.record-row');
+        const newRecords = [];
+        rows.forEach(row => {
+            newRecords.push({
+                date: row.querySelector('[name="date"]').value,
+                description: row.querySelector('[name="description"]').value,
+                category: row.querySelector('[name="category"]').value,
+                amount: parseFloat(row.querySelector('[name="amount"]').value),
+                payment: row.querySelector('[name="payment"]').value
+            });
+        });
+        expenses = [...expenses, ...newRecords];
+        saveToLocalStorage();
+        renderApp();
+        if (modal) modal.style.display = 'none';
+    };
+}
+
+if (incomeForm) {
+    incomeForm.onsubmit = (e) => {
+        e.preventDefault();
+        const dateVal = document.getElementById('income-date').value;
+        const descVal = document.getElementById('income-description').value;
+        const amountVal = document.getElementById('income-amount').value;
+        
+        incomes.push({
+            date: dateVal,
+            description: descVal,
+            amount: parseFloat(amountVal)
+        });
+        saveToLocalStorage();
+        renderApp();
+        if (modalIncome) modalIncome.style.display = 'none';
+        incomeForm.reset();
+    };
+}

@@ -104,10 +104,26 @@
     box-shadow: var(--shadow);
 }
 
-.summary-card.total { background: linear-gradient(135deg, #4a90e2, #357abd); }
+.summary-card.total { background: linear-gradient(135deg, #e74c3c, #c0392b); }
 .summary-card.daily { background: linear-gradient(135deg, #2ecc71, #27ae60); }
 .summary-card.monthly { background: linear-gradient(135deg, #f1c40f, #f39c12); }
 .summary-card.yearly { background: linear-gradient(135deg, #e67e22, #d35400); }
+.summary-card.income { background: linear-gradient(135deg, #1abc9c, #16a085); }
+.summary-card.monthly-income { background: linear-gradient(135deg, #1abc9c, #16a085); }
+.summary-card.balance { background: linear-gradient(135deg, #34495e, #2c3e50); }
+.summary-card.monthly-balance { background: linear-gradient(135deg, #8e44ad, #7d3c98); }
+
+.section-title {
+    margin-top: 40px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.section-title h2 {
+    font-size: 1.3rem;
+    color: #2c3e50;
+}
 
 .summary-card h3 {
     font-size: 0.9rem;
