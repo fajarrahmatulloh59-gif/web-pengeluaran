@@ -17,26 +17,75 @@
     font-family: 'Inter', sans-serif;
 }
 
-body {
+/* Login Section */
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
     background-color: var(--bg-color);
-    color: var(--text-color);
-    line-height: 1.6;
-    padding: 20px;
+}
+
+.login-card {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.login-card h2 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.login-card p {
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 0.9rem;
+}
+
+.user-badge {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-logout-link {
+    color: var(--danger-color);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: underline;
+    font-size: 0.85rem;
+}
+
+.main-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.main-header h1 {
+    font-weight: 700;
+    color: #2c3e50;
 }
 
 .container {
     max-width: 1000px;
     margin: 0 auto;
+    padding-bottom: 50px;
 }
 
-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-header h1 {
-    font-weight: 700;
-    color: #2c3e50;
+/* Hide header in app container if main-header used */
+#app-container header:not(.main-header) {
+    display: none;
 }
 
 /* Summary Grid */

@@ -2,8 +2,16 @@
 let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
 let archives = JSON.parse(localStorage.getItem('archives')) || [];
 let yearlyArchives = JSON.parse(localStorage.getItem('yearlyArchives')) || [];
+let userEmail = localStorage.getItem('userEmail') || null;
 
 // DOM Elements
+const loginPage = document.getElementById('login-page');
+const appContainer = document.getElementById('app-container');
+const loginForm = document.getElementById('login-form');
+const loginEmailInput = document.getElementById('login-email');
+const btnLogout = document.getElementById('btn-logout');
+const currentUserEmailDisplay = document.getElementById('current-user-email');
+
 const modal = document.getElementById('modal-form');
 const btnOpenModal = document.getElementById('btn-open-modal');
 const btnCloseModal = document.querySelector('.close-modal');
@@ -25,11 +33,45 @@ const totalYearlyDisplay = document.getElementById('total-yearly');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    checkEndOfMonth();
-    renderApp();
-    renderArchives();
-    renderYearlyArchives();
+    checkAuth();
 });
+
+// --- Auth Functions ---
+
+function checkAuth() {
+    if (userEmail) {
+        loginPage.style.display = 'none';
+        appContainer.style.display = 'block';
+        currentUserEmailDisplay.textContent = `User: ${userEmail}`;
+        
+        // Only run app logic if authenticated
+        checkEndOfMonth();
+        renderApp();
+        renderArchives();
+        renderYearlyArchives();
+    } else {
+        loginPage.style.display = 'flex';
+        appContainer.style.display = 'none';
+    }
+}
+
+loginForm.onsubmit = (e) => {
+    e.preventDefault();
+    const email = loginEmailInput.value.trim();
+    if (email) {
+        userEmail = email;
+        localStorage.setItem('userEmail', email);
+        checkAuth();
+    }
+};
+
+btnLogout.onclick = () => {
+    if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('userEmail');
+        userEmail = null;
+        window.location.reload(); 
+    }
+};
 
 // --- Helper Functions ---
 
@@ -298,8 +340,8 @@ function deleteYearlyArchive(id) {
 }
 
 function downloadPDF(id) {
-    const archive = archives.find(a => a.id === id) || yearlyArchives.find(ya => ya.items && ya.id === id); // fallback search
-    const dataToUse = archive || archives[0]; // safety fallback
+    const archive = archives.find(a => a.id === id) || yearlyArchives.find(ya => ya.items && ya.id === id); 
+    const dataToUse = archive || archives[0]; 
     
     if (!dataToUse) return;
 
