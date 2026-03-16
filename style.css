@@ -75,11 +75,13 @@
 .main-header h1 {
     font-weight: 700;
     color: #2c3e50;
+    font-size: 1.8rem;
 }
 
 .container {
     max-width: 1000px;
     margin: 0 auto;
+    padding: 20px;
     padding-bottom: 50px;
 }
 
@@ -143,6 +145,13 @@
     justify-content: flex-end;
     gap: 10px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.action-bar button {
+    flex: 1;
+    min-width: 160px;
+    white-space: nowrap;
 }
 
 /* Banner */
@@ -156,6 +165,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 /* Archive Section */
@@ -187,12 +198,13 @@
 
 /* Buttons */
 .btn-primary, .btn-secondary, .btn-success, .btn-danger {
-    padding: 10px 20px;
+    padding: 12px 20px;
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
     font-weight: 600;
     transition: opacity 0.2s;
+    font-size: 0.9rem;
 }
 
 .btn-primary { background-color: var(--primary-color); color: white; }
@@ -207,19 +219,21 @@
 /* Table Container */
 .table-container {
     background: var(--card-bg);
-    padding: 20px;
+    padding: 15px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     overflow-x: auto;
+    margin-bottom: 20px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 600px; /* Force scroll on very small screens */
 }
 
 th, td {
-    padding: 15px;
+    padding: 12px 10px;
     text-align: left;
     border-bottom: 1px solid #eee;
 }
@@ -282,14 +296,14 @@ th {
     align-items: center;
 }
 
-.close-modal {
+.close-modal, .close-modal-income {
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
     color: #888;
 }
 
-.close-modal:hover { color: #333; }
+.close-modal:hover, .close-modal-income:hover { color: #333; }
 
 .modal-body {
     padding: 20px;
@@ -301,6 +315,7 @@ th {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 /* Form Styling */
@@ -329,9 +344,10 @@ th {
 }
 
 .form-group input, .form-group select {
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    font-size: 1rem;
 }
 
 #btn-add-row {
@@ -357,10 +373,43 @@ th {
     font-size: 14px;
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-    body { padding: 10px; }
-    #total-expense { font-size: 1.8rem; }
-    .record-row { grid-template-columns: 1fr; }
-    th, td { padding: 10px; font-size: 0.85rem; }
+/* Responsive Breakpoints */
+@media (max-width: 768px) {
+    .container { padding: 10px; }
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .action-bar {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-header h1 { font-size: 1.4rem; }
+    .summary-grid { grid-template-columns: 1fr; }
+    
+    .action-bar {
+        flex-direction: column;
+    }
+    
+    .action-bar button {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .summary-card p { font-size: 1.3rem; }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px auto;
+    }
+
+    .record-row {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-footer button {
+        width: 100%;
+    }
 }
