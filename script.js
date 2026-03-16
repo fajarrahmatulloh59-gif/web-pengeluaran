@@ -1,17 +1,56 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { 
+    getAuth, 
+    signInWithPopup, 
+    GoogleAuthProvider, 
+    onAuthStateChanged, 
+    signOut 
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    deleteDoc, 
+    doc, 
+    onSnapshot, 
+    query, 
+    orderBy, 
+    setDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+// --- KONFIGURASI FIREBASE ---
+// Ganti dengan konfigurasi dari Firebase Console Anda
+ const firebaseConfig = {
+   apiKey: "AIzaSy...",
+   authDomain: "project-anda.firebaseapp.com",
+   projectId: "project-anda",
+   storageBucket: "project-anda.appspot.com",
+   messagingSenderId: "1234567890",
+   appId: "1:1234567890:web:abcdef"
+};
+
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
 // State Management
-let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-let incomes = JSON.parse(localStorage.getItem('incomes')) || [];
-let archives = JSON.parse(localStorage.getItem('archives')) || [];
-let yearlyArchives = JSON.parse(localStorage.getItem('yearlyArchives')) || [];
-let userEmail = localStorage.getItem('userEmail') || null;
+let expenses = [];
+let incomes = [];
+let archives = [];
+let yearlyArchives = [];
+let currentUser = null;
 
 // DOM Elements
 const loginPage = document.getElementById('login-page');
 const appContainer = document.getElementById('app-container');
-const loginForm = document.getElementById('login-form');
-const loginEmailInput = document.getElementById('login-email');
+const btnLoginGoogle = document.getElementById('btn-login-google');
 const btnLogout = document.getElementById('btn-logout');
 const currentUserEmailDisplay = document.getElementById('current-user-email');
+const userPhotoDisplay = document.getElementById('user-photo');
 
 const modal = document.getElementById('modal-form');
 const modalIncome = document.getElementById('modal-income');
@@ -37,8 +76,6 @@ const recordInputsContainer = document.getElementById('record-inputs-container')
 const expenseList = document.getElementById('expense-list');
 const incomeList = document.getElementById('income-list');
 
-const totalExpenseDisplay = document.getElementById('total-expense');
-const totalIncomeDisplay = document.getElementById('total-income');
 const totalBalanceDisplay = document.getElementById('total-balance');
 const monthlyIncomeDisplay = document.getElementById('monthly-income');
 const monthlyBalanceDisplay = document.getElementById('monthly-balance');
@@ -46,49 +83,80 @@ const totalDailyDisplay = document.getElementById('total-daily');
 const totalMonthlyDisplay = document.getElementById('total-monthly');
 const totalYearlyDisplay = document.getElementById('total-yearly');
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
-});
-
 // --- Auth Functions ---
 
-function checkAuth() {
-    if (userEmail) {
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
         if (loginPage) loginPage.style.display = 'none';
         if (appContainer) appContainer.style.display = 'block';
-        if (currentUserEmailDisplay) currentUserEmailDisplay.textContent = `User: ${userEmail}`;
+        if (currentUserEmailDisplay) currentUserEmailDisplay.textContent = user.displayName || user.email;
+        if (userPhotoDisplay) {
+            userPhotoDisplay.src = user.photoURL || '';
+            userPhotoDisplay.style.display = 'block';
+        }
         
-        checkEndOfMonth();
-        renderApp();
-        renderArchives();
-        renderYearlyArchives();
+        setupRealtimeListeners(user.uid);
     } else {
+        currentUser = null;
         if (loginPage) loginPage.style.display = 'flex';
         if (appContainer) appContainer.style.display = 'none';
     }
-}
+});
 
-if (loginForm) {
-    loginForm.onsubmit = (e) => {
-        e.preventDefault();
-        const email = loginEmailInput.value.trim();
-        if (email) {
-            userEmail = email;
-            localStorage.setItem('userEmail', email);
-            checkAuth();
+if (btnLoginGoogle) {
+    btnLoginGoogle.onclick = async () => {
+        try {
+            await signInWithPopup(auth, provider);
+        } catch (error) {
+            console.error("Login Error:", error);
+            alert("Gagal login: " + error.message);
         }
     };
 }
 
 if (btnLogout) {
-    btnLogout.onclick = () => {
+    btnLogout.onclick = async () => {
         if (confirm('Apakah Anda yakin ingin logout?')) {
-            localStorage.removeItem('userEmail');
-            userEmail = null;
-            window.location.reload(); 
+            await signOut(auth);
+            window.location.reload();
         }
     };
+}
+
+// --- Firestore Realtime Listeners ---
+
+function setupRealtimeListeners(uid) {
+    // Listen to Expenses
+    const qExpenses = query(collection(db, "users", uid, "expenses"), orderBy("date", "desc"));
+    onSnapshot(qExpenses, (snapshot) => {
+        expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderExpenses();
+        updateTotal();
+        checkEndOfMonth();
+    });
+
+    // Listen to Incomes
+    const qIncomes = query(collection(db, "users", uid, "incomes"), orderBy("date", "desc"));
+    onSnapshot(qIncomes, (snapshot) => {
+        incomes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderIncomes();
+        updateTotal();
+    });
+
+    // Listen to Archives
+    const qArchives = query(collection(db, "users", uid, "archives"), orderBy("timestamp", "desc"));
+    onSnapshot(qArchives, (snapshot) => {
+        archives = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderArchives();
+    });
+
+    // Listen to Yearly Archives
+    const qYearlyArchives = query(collection(db, "users", uid, "yearlyArchives"), orderBy("timestamp", "desc"));
+    onSnapshot(qYearlyArchives, (snapshot) => {
+        yearlyArchives = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderYearlyArchives();
+    });
 }
 
 // --- Helper Functions ---
@@ -101,13 +169,6 @@ function formatRupiah(number) {
     }).format(number);
 }
 
-function saveToLocalStorage() {
-    localStorage.setItem('expenses', JSON.stringify(expenses));
-    localStorage.setItem('incomes', JSON.stringify(incomes));
-    localStorage.setItem('archives', JSON.stringify(archives));
-    localStorage.setItem('yearlyArchives', JSON.stringify(yearlyArchives));
-}
-
 function getTodayDate() {
     return new Date().toISOString().split('T')[0];
 }
@@ -117,25 +178,18 @@ function getMonthName(monthIndex) {
     return months[monthIndex];
 }
 
-// --- Logic Functions ---
-
-function renderApp() {
-    renderExpenses();
-    renderIncomes();
-    updateTotal();
-}
+// --- UI Rendering Functions ---
 
 function renderExpenses() {
     if (!expenseList) return;
     expenseList.innerHTML = '';
-    const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    if (sortedExpenses.length === 0) {
+    if (expenses.length === 0) {
         expenseList.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada catatan pengeluaran.</td></tr>';
         return;
     }
 
-    sortedExpenses.forEach((item) => {
+    expenses.forEach((item) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${item.date}</td>
@@ -144,7 +198,7 @@ function renderExpenses() {
             <td>${formatRupiah(item.amount)}</td>
             <td>${item.payment}</td>
             <td>
-                <button class="btn-delete" onclick="deleteExpense(${expenses.indexOf(item)})">Hapus</button>
+                <button class="btn-delete" onclick="window.deleteExpense('${item.id}')">Hapus</button>
             </td>
         `;
         expenseList.appendChild(tr);
@@ -154,21 +208,20 @@ function renderExpenses() {
 function renderIncomes() {
     if (!incomeList) return;
     incomeList.innerHTML = '';
-    const sortedIncomes = [...incomes].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    if (sortedIncomes.length === 0) {
+    if (incomes.length === 0) {
         incomeList.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada catatan pemasukkan.</td></tr>';
         return;
     }
 
-    sortedIncomes.forEach((item) => {
+    incomes.forEach((item) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${item.date}</td>
             <td>${item.description}</td>
             <td>${formatRupiah(item.amount)}</td>
             <td>
-                <button class="btn-delete" onclick="deleteIncome(${incomes.indexOf(item)})">Hapus</button>
+                <button class="btn-delete" onclick="window.deleteIncome('${item.id}')">Hapus</button>
             </td>
         `;
         incomeList.appendChild(tr);
@@ -202,32 +255,27 @@ function updateTotal() {
         if (item.date.startsWith(thisMonthStr)) monthlyInc += amount;
     });
 
-    if (totalExpenseDisplay) totalExpenseDisplay.textContent = formatRupiah(totalExp);
-    if (totalIncomeDisplay) totalIncomeDisplay.textContent = formatRupiah(totalInc);
     if (monthlyIncomeDisplay) monthlyIncomeDisplay.textContent = formatRupiah(monthlyInc);
     if (monthlyBalanceDisplay) monthlyBalanceDisplay.textContent = formatRupiah(monthlyInc - monthlyExp);
-    
     if (totalBalanceDisplay) totalBalanceDisplay.textContent = formatRupiah(totalInc - totalExp);
     if (totalDailyDisplay) totalDailyDisplay.textContent = formatRupiah(dailyExp);
     if (totalMonthlyDisplay) totalMonthlyDisplay.textContent = formatRupiah(monthlyExp);
     if (totalYearlyDisplay) totalYearlyDisplay.textContent = formatRupiah(yearlyExp);
 }
 
-function deleteExpense(index) {
-    if (confirm('Hapus catatan pengeluaran ini?')) {
-        expenses.splice(index, 1);
-        saveToLocalStorage();
-        renderApp();
-    }
-}
+// --- CRUD Actions ---
 
-function deleteIncome(index) {
-    if (confirm('Hapus catatan pemasukkan ini?')) {
-        incomes.splice(index, 1);
-        saveToLocalStorage();
-        renderApp();
+window.deleteExpense = async (id) => {
+    if (confirm('Hapus catatan pengeluaran ini?')) {
+        await deleteDoc(doc(db, "users", currentUser.uid, "expenses", id));
     }
-}
+};
+
+window.deleteIncome = async (id) => {
+    if (confirm('Hapus catatan pemasukkan ini?')) {
+        await deleteDoc(doc(db, "users", currentUser.uid, "incomes", id));
+    }
+};
 
 // --- Archive & PDF Logic ---
 
@@ -246,32 +294,9 @@ function checkEndOfMonth() {
     if (hasOldData && archiveBanner) {
         archiveBanner.style.display = 'flex';
     }
-
-    if (expenses.length > 0) {
-        const dates = expenses.map(item => new Date(item.date).getTime());
-        const oldestDate = new Date(Math.min(...dates));
-        const diffTime = Math.abs(now - oldestDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays >= 30) {
-            setTimeout(() => {
-                if (confirm(`Pengeluaran anda sudah genap 1 bulan (sudah ${diffDays} hari). Arsipkan sekarang dan download PDF?`)) {
-                    archiveCurrentMonth(true); 
-                }
-            }, 1000);
-        }
-    }
-
-    if (archives.length >= 12) {
-        setTimeout(() => {
-            if (confirm(`Pengeluaran anda sudah genap 12 bulan (1 tahun). Arsipkan sekarang dan download laporan PDF tahunan?`)) {
-                archiveCurrentYear(true); 
-            }
-        }, 2000);
-    }
 }
 
-function archiveCurrentMonth(autoDownload = false) {
+async function archiveCurrentMonth(autoDownload = false) {
     if (expenses.length === 0 && incomes.length === 0) {
         alert('Tidak ada data untuk diarsipkan.');
         return;
@@ -283,32 +308,40 @@ function archiveCurrentMonth(autoDownload = false) {
     const totalInc = incomes.reduce((sum, item) => sum + parseFloat(item.amount), 0);
 
     const newArchive = {
-        id: Date.now(),
         monthYear: label,
         totalExpense: totalExp,
         totalIncome: totalInc,
         balance: totalInc - totalExp,
         expenses: [...expenses],
-        incomes: [...incomes]
+        incomes: [...incomes],
+        timestamp: serverTimestamp()
     };
 
-    archives.unshift(newArchive);
-    expenses = [];
-    incomes = [];
+    try {
+        const archiveRef = await addDoc(collection(db, "users", currentUser.uid, "archives"), newArchive);
+        
+        // Delete archived data from active collections
+        for (const exp of expenses) {
+            await deleteDoc(doc(db, "users", currentUser.uid, "expenses", exp.id));
+        }
+        for (const inc of incomes) {
+            await deleteDoc(doc(db, "users", currentUser.uid, "incomes", inc.id));
+        }
 
-    saveToLocalStorage();
-    renderApp();
-    renderArchives();
-    if (archiveBanner) archiveBanner.style.display = 'none';
-    
-    if (autoDownload) {
-        downloadPDF(newArchive.id);
+        if (archiveBanner) archiveBanner.style.display = 'none';
+        
+        if (autoDownload) {
+            downloadPDF({ id: archiveRef.id, ...newArchive });
+        }
+        
+        alert(`Data bulan ${label} berhasil diarsipkan.`);
+    } catch (error) {
+        console.error("Archive Error:", error);
+        alert("Gagal mengarsipkan data.");
     }
-    
-    alert(`Data bulan ${label} berhasil diarsipkan.`);
 }
 
-function archiveCurrentYear(autoDownload = false) {
+async function archiveCurrentYear(autoDownload = false) {
     if (archives.length === 0) {
         alert('Tidak ada arsip bulanan untuk dikonsolidasi.');
         return;
@@ -328,28 +361,33 @@ function archiveCurrentYear(autoDownload = false) {
     }));
 
     const newYearlyArchive = {
-        id: Date.now(),
         year: `Tahun ${yearLabel}`,
         totalExpense: totalExp,
         totalIncome: totalInc,
         balance: totalInc - totalExp,
         monthlyBreakdown: monthlySummary,
         expenses: allExp,
-        incomes: allInc
+        incomes: allInc,
+        timestamp: serverTimestamp()
     };
 
-    yearlyArchives.unshift(newYearlyArchive);
-    archives = []; 
+    try {
+        const yArchiveRef = await addDoc(collection(db, "users", currentUser.uid, "yearlyArchives"), newYearlyArchive);
+        
+        // Clear monthly archives
+        for (const arc of archives) {
+            await deleteDoc(doc(db, "users", currentUser.uid, "archives", arc.id));
+        }
 
-    saveToLocalStorage();
-    renderArchives();
-    renderYearlyArchives();
+        if (autoDownload) {
+            downloadYearlyPDF({ id: yArchiveRef.id, ...newYearlyArchive });
+        }
 
-    if (autoDownload) {
-        downloadYearlyPDF(newYearlyArchive.id);
+        alert(`Data tahun ${yearLabel} berhasil diarsipkan ke laporan tahunan.`);
+    } catch (error) {
+        console.error("Yearly Archive Error:", error);
+        alert("Gagal mengarsipkan tahunan.");
     }
-
-    alert(`Data tahun ${yearLabel} berhasil diarsipkan ke laporan tahunan.`);
 }
 
 function renderArchives() {
@@ -365,8 +403,8 @@ function renderArchives() {
             <td>${archive.monthYear}</td>
             <td>${formatRupiah(archive.totalExpense)}</td>
             <td>
-                <button class="btn-pdf" onclick="downloadPDF(${archive.id})">Download PDF</button>
-                <button class="btn-delete" style="margin-left:5px" onclick="deleteArchive(${archive.id})">Hapus</button>
+                <button class="btn-pdf" onclick="window.downloadPDF('${archive.id}')">Download PDF</button>
+                <button class="btn-delete" style="margin-left:5px" onclick="window.deleteArchive('${archive.id}')">Hapus</button>
             </td>
         `;
         archiveList.appendChild(tr);
@@ -386,102 +424,98 @@ function renderYearlyArchives() {
             <td>${yearArc.year}</td>
             <td>${formatRupiah(yearArc.totalExpense)}</td>
             <td>
-                <button class="btn-pdf" onclick="downloadYearlyPDF(${yearArc.id})">Download PDF Tahunan</button>
-                <button class="btn-delete" style="margin-left:5px" onclick="deleteYearlyArchive(${yearArc.id})">Hapus</button>
+                <button class="btn-pdf" onclick="window.downloadYearlyPDF('${yearArc.id}')">Download PDF Tahunan</button>
+                <button class="btn-delete" style="margin-left:5px" onclick="window.deleteYearlyArchive('${yearArc.id}')">Hapus</button>
             </td>
         `;
         yearlyArchiveList.appendChild(tr);
     });
 }
 
-function deleteArchive(id) {
+window.deleteArchive = async (id) => {
     if (confirm('Hapus arsip ini selamanya?')) {
-        archives = archives.filter(a => a.id !== id);
-        saveToLocalStorage();
-        renderArchives();
+        await deleteDoc(doc(db, "users", currentUser.uid, "archives", id));
     }
-}
+};
 
-function deleteYearlyArchive(id) {
+window.deleteYearlyArchive = async (id) => {
     if (confirm('Hapus arsip TAHUNAN ini selamanya?')) {
-        yearlyArchives = yearlyArchives.filter(ya => ya.id !== id);
-        saveToLocalStorage();
-        renderYearlyArchives();
+        await deleteDoc(doc(db, "users", currentUser.uid, "yearlyArchives", id));
     }
-}
+};
 
-function downloadPDF(id) {
+window.downloadPDF = (id) => {
     const archive = archives.find(a => a.id === id);
     if (!archive) return;
 
     const { jsPDF } = window.jspdf;
-    const doc = jsPDF();
+    const docPdf = new jsPDF();
 
-    doc.setFontSize(18);
-    doc.text(`Rekapan Keuangan Rumah Tangga`, 14, 20);
-    doc.setFontSize(12);
-    doc.text(`Periode: ${archive.monthYear}`, 14, 30);
-    doc.text(`Total Pemasukkan: ${formatRupiah(archive.totalIncome)}`, 14, 38);
-    doc.text(`Total Pengeluaran: ${formatRupiah(archive.totalExpense)}`, 14, 46);
-    doc.text(`Sisa Saldo: ${formatRupiah(archive.balance)}`, 14, 54);
+    docPdf.setFontSize(18);
+    docPdf.text(`Rekapan Keuangan Rumah Tangga`, 14, 20);
+    docPdf.setFontSize(12);
+    docPdf.text(`Periode: ${archive.monthYear}`, 14, 30);
+    docPdf.text(`Total Pemasukkan: ${formatRupiah(archive.totalIncome)}`, 14, 38);
+    docPdf.text(`Total Pengeluaran: ${formatRupiah(archive.totalExpense)}`, 14, 46);
+    docPdf.text(`Sisa Saldo: ${formatRupiah(archive.balance)}`, 14, 54);
 
-    doc.text(`Daftar Pengeluaran:`, 14, 65);
+    docPdf.text(`Daftar Pengeluaran:`, 14, 65);
     const expData = archive.expenses.map(item => [item.date, item.description, item.category, formatRupiah(item.amount), item.payment]);
-    doc.autoTable({
+    docPdf.autoTable({
         startY: 70,
         head: [['Tanggal', 'Deskripsi', 'Jenis', 'Nominal', 'Metode']],
         body: expData,
     });
 
-    const finalY = doc.lastAutoTable.finalY || 70;
-    doc.text(`Daftar Pemasukkan:`, 14, finalY + 15);
+    const finalY = docPdf.lastAutoTable.finalY || 70;
+    docPdf.text(`Daftar Pemasukkan:`, 14, finalY + 15);
     const incData = archive.incomes.map(item => [item.date, item.description, formatRupiah(item.amount)]);
-    doc.autoTable({
+    docPdf.autoTable({
         startY: finalY + 20,
         head: [['Tanggal', 'Deskripsi', 'Nominal']],
         body: incData,
     });
 
-    doc.save(`Keuangan_${archive.monthYear.replace(' ', '_')}.pdf`);
+    docPdf.save(`Keuangan_${archive.monthYear.replace(' ', '_')}.pdf`);
 }
 
-function downloadYearlyPDF(id) {
+window.downloadYearlyPDF = (id) => {
     const yearArc = yearlyArchives.find(ya => ya.id === id);
     if (!yearArc) return;
 
     const { jsPDF } = window.jspdf;
-    const doc = jsPDF();
+    const docPdf = new jsPDF();
 
-    doc.setFontSize(18);
-    doc.text(`Laporan Keuangan Rumah Tangga TAHUNAN`, 14, 20);
-    doc.setFontSize(12);
-    doc.text(`Periode: ${yearArc.year}`, 14, 30);
-    doc.text(`Total Pemasukkan Setahun: ${formatRupiah(yearArc.totalIncome)}`, 14, 38);
-    doc.text(`Total Pengeluaran Setahun: ${formatRupiah(yearArc.totalExpense)}`, 14, 46);
-    doc.text(`Sisa Saldo: ${formatRupiah(yearArc.balance)}`, 14, 54);
+    docPdf.setFontSize(18);
+    docPdf.text(`Laporan Keuangan Rumah Tangga TAHUNAN`, 14, 20);
+    docPdf.setFontSize(12);
+    docPdf.text(`Periode: ${yearArc.year}`, 14, 30);
+    docPdf.text(`Total Pemasukkan Setahun: ${formatRupiah(yearArc.totalIncome)}`, 14, 38);
+    docPdf.text(`Total Pengeluaran Setahun: ${formatRupiah(yearArc.totalExpense)}`, 14, 46);
+    docPdf.text(`Sisa Saldo: ${formatRupiah(yearArc.balance)}`, 14, 54);
 
-    doc.text(`Ringkasan Per Bulan:`, 14, 65);
+    docPdf.text(`Ringkasan Per Bulan:`, 14, 65);
     const summaryData = yearArc.monthlyBreakdown.map(m => [m.month, formatRupiah(m.inc), formatRupiah(m.exp)]);
-    doc.autoTable({
+    docPdf.autoTable({
         startY: 70,
         head: [['Bulan', 'Pemasukkan', 'Pengeluaran']],
         body: summaryData,
     });
 
-    doc.addPage();
-    doc.text(`Detail Seluruh Transaksi Setahun:`, 14, 20);
+    docPdf.addPage();
+    docPdf.text(`Detail Seluruh Transaksi Setahun:`, 14, 20);
     const combined = [
         ...yearArc.expenses.map(i => ({...i, type: 'Pengeluaran'})),
         ...yearArc.incomes.map(i => ({...i, type: 'Pemasukkan'}))
     ].sort((a,b) => new Date(a.date) - new Date(b.date));
 
-    doc.autoTable({
+    docPdf.autoTable({
         startY: 30,
         head: [['Tanggal', 'Deskripsi', 'Tipe', 'Nominal']],
         body: combined.map(i => [i.date, i.description, i.type, formatRupiah(i.amount)]),
     });
 
-    doc.save(`Laporan_Tahunan_${yearArc.year.replace(' ', '_')}.pdf`);
+    docPdf.save(`Laporan_Tahunan_${yearArc.year.replace(' ', '_')}.pdf`);
 }
 
 // Event Listeners
@@ -541,13 +575,13 @@ function addRow() {
         <div class="form-group"><label>Jenis</label><select name="category" required><option value="Makanan">Makanan</option><option value="Transportasi">Transportasi</option><option value="Belanja">Belanja</option><option value="Tagihan">Tagihan</option><option value="Lainnya">Lainnya</option></select></div>
         <div class="form-group"><label>Nominal</label><input type="number" name="amount" placeholder="0" min="1" required></div>
         <div class="form-group"><label>Metode</label><select name="payment" required><option value="Cash">Cash</option><option value="Transfer">Transfer</option><option value="QRIS">QRIS</option><option value="E-Wallet">E-Wallet</option></select></div>
-        <button type="button" class="btn-remove-row" onclick="removeRow(this)">&times;</button>
+        <button type="button" class="btn-remove-row" onclick="window.removeRow(this)">&times;</button>
     `;
     recordInputsContainer.appendChild(row);
     updateRemoveButtons();
 }
 
-function removeRow(btn) {
+window.removeRow = (btn) => {
     const rows = document.querySelectorAll('.record-row');
     if (rows.length > 1) { btn.parentElement.remove(); updateRemoveButtons(); }
 }
@@ -560,41 +594,54 @@ function updateRemoveButtons() {
 if (btnAddRow) btnAddRow.onclick = addRow;
 
 if (multiRecordForm) {
-    multiRecordForm.onsubmit = (e) => {
+    multiRecordForm.onsubmit = async (e) => {
         e.preventDefault();
         const rows = document.querySelectorAll('.record-row');
-        const newRecords = [];
+        const batchPromise = [];
+        
         rows.forEach(row => {
-            newRecords.push({
+            const newRecord = {
                 date: row.querySelector('[name="date"]').value,
                 description: row.querySelector('[name="description"]').value,
                 category: row.querySelector('[name="category"]').value,
                 amount: parseFloat(row.querySelector('[name="amount"]').value),
-                payment: row.querySelector('[name="payment"]').value
-            });
+                payment: row.querySelector('[name="payment"]').value,
+                timestamp: serverTimestamp()
+            };
+            batchPromise.push(addDoc(collection(db, "users", currentUser.uid, "expenses"), newRecord));
         });
-        expenses = [...expenses, ...newRecords];
-        saveToLocalStorage();
-        renderApp();
-        if (modal) modal.style.display = 'none';
+
+        try {
+            await Promise.all(batchPromise);
+            if (modal) modal.style.display = 'none';
+        } catch (error) {
+            console.error("Save Expenses Error:", error);
+            alert("Gagal menyimpan data.");
+        }
     };
 }
 
 if (incomeForm) {
-    incomeForm.onsubmit = (e) => {
+    incomeForm.onsubmit = async (e) => {
         e.preventDefault();
         const dateVal = document.getElementById('income-date').value;
         const descVal = document.getElementById('income-description').value;
         const amountVal = document.getElementById('income-amount').value;
         
-        incomes.push({
+        const newIncome = {
             date: dateVal,
             description: descVal,
-            amount: parseFloat(amountVal)
-        });
-        saveToLocalStorage();
-        renderApp();
-        if (modalIncome) modalIncome.style.display = 'none';
-        incomeForm.reset();
+            amount: parseFloat(amountVal),
+            timestamp: serverTimestamp()
+        };
+
+        try {
+            await addDoc(collection(db, "users", currentUser.uid, "incomes"), newIncome);
+            if (modalIncome) modalIncome.style.display = 'none';
+            incomeForm.reset();
+        } catch (error) {
+            console.error("Save Income Error:", error);
+            alert("Gagal menyimpan data.");
+        }
     };
 }

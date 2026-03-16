@@ -16,30 +16,30 @@
         <div class="login-card">
             <h2>Masuk ke Catatan</h2>
             <p>Masukkan email untuk mulai mencatat pengeluaran.</p>
-            <form id="login-form">
-                <div class="form-group">
-                    <label>Alamat Email</label>
-                    <input type="email" id="login-email" placeholder="contoh: suami@email.com" required>
-                </div>
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 15px;">Masuk Sekarang</button>
-            </form>
-        </div>
-    </div>
+            <div id="login-form-container">
+                <button id="btn-login-google" class="btn-primary" style="width: 100%; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18" alt="Google icon">
+                    Masuk dengan Google
+                </button>
+            </div>
+            </div>
+            </div>
 
-    <!-- Main App Container -->
-    <div id="app-container" class="container" style="display: none;">
-        <header class="main-header">
+            <!-- Main App Container -->
+            <div id="app-container" class="container" style="display: none;">
+            <header class="main-header">
             <div>
                 <h1>Catatan Pengeluaran Rumah Tangga</h1>
                 <div id="user-info" class="user-badge">
+                    <img id="user-photo" src="" alt="" style="width: 30px; height: 30px; border-radius: 50%; display: none;">
                     <span id="current-user-email"></span>
                     <button id="btn-logout" class="btn-logout-link">Logout</button>
                 </div>
             </div>
-        </header>
-
-        <!-- Archive Prompt Banner (Hidden by default) -->
-        <div id="archive-banner" class="banner" style="display: none;">
+            </header>
+            ...
+            <script type="module" src="script.js"></script>
+            </body>
             <p>Bulan lalu telah berakhir. Ingin mengarsipkan data dan mengosongkan tabel?</p>
             <button id="btn-archive-now" class="btn-success">Arsipkan & Reset</button>
         </div>
