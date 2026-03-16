@@ -1,0 +1,8 @@
+# Firebase secrets
+*-firebase-adminsdk-*.json
+firebase.log
+.firebaserc
+
+# OS files
+.DS_Store
+Thumbs.db
