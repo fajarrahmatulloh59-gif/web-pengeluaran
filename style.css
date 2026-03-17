@@ -484,24 +484,44 @@ th {
     }
 
     /* Perbaikan Login Mobile */
+    .login-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        min-height: 100vh;
+        height: 100%;
+        display: flex;
+        padding: 15px;
+    }
+
     .login-card {
-        padding: 30px 20px;
+        padding: 35px 20px;
         width: 100%;
-        max-width: 100%;
+        max-width: 360px;
         border-radius: 20px;
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
     }
 
     .login-card h2 {
-        font-size: 20px;
+        font-size: 22px;
+        line-height: 1.2;
     }
 
     .login-card p {
-        font-size: 0.95rem;
+        font-size: 14px;
         margin-bottom: 25px;
+        padding: 0 10px;
     }
 
     .btn-google {
-        font-size: 14px;
-        padding: 12px 15px;
+        font-size: 15px;
+        padding: 12px 10px;
+        gap: 10px;
+        width: 100% !important;
+        margin: 0 auto;
+    }
+
+    .btn-google img {
+        width: 18px !important;
+        height: 18px !important;
     }
 }
