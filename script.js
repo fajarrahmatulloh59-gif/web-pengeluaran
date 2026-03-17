@@ -20,14 +20,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // --- KONFIGURASI FIREBASE ---
-// Ganti dengan konfigurasi dari Firebase Console Anda
- const firebaseConfig = {
-   apiKey: "AIzaSy...",
-   authDomain: "project-anda.firebaseapp.com",
-   projectId: "project-anda",
-   storageBucket: "project-anda.appspot.com",
-   messagingSenderId: "1234567890",
-   appId: "1:1234567890:web:abcdef"
+const firebaseConfig = {
+    apiKey: "AIzaSyBR5HZ7Y3vpXHIKVsvkClZeKDastUMJQWI",
+    authDomain: "web-pengeluaran.firebaseapp.com",
+    projectId: "web-pengeluaran",
+    storageBucket: "web-pengeluaran.firebasestorage.app",
+    messagingSenderId: "615532747927",
+    appId: "1:615532747927:web:0e44573c3078599b4b9dd2",
+    measurementId: "G-HEKBPSVC1W"
 };
 
 
