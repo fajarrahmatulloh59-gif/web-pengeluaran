@@ -22,12 +22,12 @@
                     Masuk dengan Google
                 </button>
             </div>
-            </div>
-            </div>
+        </div>
+    </div>
 
-            <!-- Main App Container -->
-            <div id="app-container" class="container" style="display: none;">
-            <header class="main-header">
+    <!-- Main App Container -->
+    <div id="app-container" class="container" style="display: none;">
+        <header class="main-header">
             <div>
                 <h1>Catatan Pengeluaran Rumah Tangga</h1>
                 <div id="user-info" class="user-badge">
@@ -36,11 +36,11 @@
                     <button id="btn-logout" class="btn-logout-link">Logout</button>
                 </div>
             </div>
-            </header>
-            ...
-            <script type="module" src="script.js"></script>
-            </body>
-            <p>Bulan lalu telah berakhir. Ingin mengarsipkan data dan mengosongkan tabel?</p>
+        </header>
+
+        <!-- Banner Arsip -->
+        <div id="archive-banner" class="archive-banner" style="display: none; background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: center; justify-content: space-between; gap: 15px;">
+            <p style="margin: 0;">Bulan lalu telah berakhir. Ingin mengarsipkan data dan mengosongkan tabel?</p>
             <button id="btn-archive-now" class="btn-success">Arsipkan & Reset</button>
         </div>
 
@@ -121,7 +121,6 @@
         <div class="archive-section">
             <header>
                 <h2>Arsip Bulanan (History)</h2>
-                <button id="btn-close-year" class="btn-danger" style="margin-bottom: 15px;">Tutup & Arsipkan Tahun Ini</button>
             </header>
             <div class="table-container">
                 <table id="archive-table">
@@ -201,41 +200,7 @@
                 <form id="multi-record-form">
                     <div id="record-inputs-container">
                         <!-- Record rows will be added here -->
-                        <div class="record-row">
-                            <div class="form-group">
-                                <label>Tanggal</label>
-                                <input type="date" name="date" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Deskripsi</label>
-                                <input type="text" name="description" placeholder="Beli apa?" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Jenis</label>
-                                <select name="category" required>
-                                    <option value="Makanan">Makanan</option>
-                                    <option value="Transportasi">Transportasi</option>
-                                    <option value="Belanja">Belanja</option>
-                                    <option value="Tagihan">Tagihan</option>
-                                    <option value="Lainnya">Lainnya</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Nominal</label>
-                                <input type="number" name="amount" placeholder="0" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Metode</label>
-                                <select name="payment" required>
-                                    <option value="Cash">Cash</option>
-                                    <option value="Transfer">Transfer</option>
-                                    <option value="QRIS">QRIS</option>
-                                    <option value="E-Wallet">E-Wallet</option>
-                                </select>
-                            </div>
-                        </div>
                     </div>
-                    
                     <button type="button" id="btn-add-row" class="btn-secondary">+ Tambah Catatan Lagi</button>
                 </form>
             </div>
@@ -246,6 +211,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
