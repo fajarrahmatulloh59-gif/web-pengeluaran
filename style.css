@@ -482,4 +482,26 @@ th {
     .modal-footer button {
         width: 100%;
     }
+
+    /* Perbaikan Login Mobile */
+    .login-card {
+        padding: 30px 20px;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px;
+    }
+
+    .login-card h2 {
+        font-size: 20px;
+    }
+
+    .login-card p {
+        font-size: 0.95rem;
+        margin-bottom: 25px;
+    }
+
+    .btn-google {
+        font-size: 14px;
+        padding: 12px 15px;
+    }
 }
