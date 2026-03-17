@@ -23,10 +23,9 @@ import {
 // Ganti dengan konfigurasi dari Firebase Console Anda
  const firebaseConfig = {
    apiKey: "AIzaSy...",
-   authDomain: "project-anda.firebaseapp.com",
-   projectId: "project-anda",
-   storageBucket: "project-anda.appspot.com",
-   messagingSenderId: "1234567890",
+   authDomain: "web-pengeluaran.firebaseapp.com",
+   projectId: "web-pengeluaran",
+   storageBucket: "web-pengeluaran.appspot.com",   messagingSenderId: "1234567890",
    appId: "1:1234567890:web:abcdef"
 };
 
