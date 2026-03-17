@@ -73,13 +73,18 @@ function unformatNumber(string) {
 }
 
 function handleAmountInput(e) {
-    let value = e.target.value.replace(/\D/g, ""); // Ambil hanya angka
-    if (value) {
-        e.target.value = formatNumberWithDots(value);
+    if (e.target && (e.target.name === 'amount' || e.target.id === 'income-amount')) {
+        let value = e.target.value.replace(/\D/g, ""); // Ambil hanya angka
+        if (value) {
+            e.target.value = formatNumberWithDots(value);
+        }
     }
 }
 
-// Daftarkan ke window agar bisa diakses dari atribut oninput di HTML
+// Pantau semua input di halaman secara global
+document.addEventListener('input', handleAmountInput);
+
+// Daftarkan ke window (untuk cadangan)
 window.handleAmountInput = handleAmountInput;
 window.unformatNumber = unformatNumber;
 
