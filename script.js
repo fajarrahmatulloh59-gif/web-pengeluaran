@@ -621,6 +621,9 @@ if (multiRecordForm) {
         try {
             await Promise.all(batchPromise);
             if (modal) modal.style.display = 'none';
+            // Reset form setelah berhasil
+            multiRecordForm.reset();
+            resetForm(); 
         } catch (error) {
             console.error("Save Expenses Error:", error);
             alert("Gagal menyimpan data.");
