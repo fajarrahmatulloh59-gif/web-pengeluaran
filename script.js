@@ -20,8 +20,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // --- KONFIGURASI FIREBASE ---
-// Ganti dengan konfigurasi dari Firebase Console Anda
- const firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyBR5HZ7Y3vpXHIKVsvkClZeKDastUMJQWI",
     authDomain: "web-pengeluaran.firebaseapp.com",
     projectId: "web-pengeluaran",
