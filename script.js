@@ -79,6 +79,10 @@ function handleAmountInput(e) {
     }
 }
 
+// Daftarkan ke window agar bisa diakses dari atribut oninput di HTML
+window.handleAmountInput = handleAmountInput;
+window.unformatNumber = unformatNumber;
+
 // DOM Elements
 const loginPage = document.getElementById('login-page');
 const appContainer = document.getElementById('app-container');
