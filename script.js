@@ -22,11 +22,13 @@ import {
 // --- KONFIGURASI FIREBASE ---
 // Ganti dengan konfigurasi dari Firebase Console Anda
  const firebaseConfig = {
-   apiKey: "AIzaSy...",
-   authDomain: "web-pengeluaran.firebaseapp.com",
-   projectId: "web-pengeluaran",
-   storageBucket: "web-pengeluaran.appspot.com",   messagingSenderId: "1234567890",
-   appId: "1:1234567890:web:abcdef"
+    apiKey: "AIzaSyBR5HZ7Y3vpXHIKVsvkClZeKDastUMJQWI",
+    authDomain: "web-pengeluaran.firebaseapp.com",
+    projectId: "web-pengeluaran",
+    storageBucket: "web-pengeluaran.firebasestorage.app",
+    messagingSenderId: "615532747927",
+    appId: "1:615532747927:web:0e44573c3078599b4b9dd2",
+    measurementId: "G-HEKBPSVC1W"
 };
 
 
