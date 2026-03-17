@@ -178,7 +178,7 @@
                     </div>
                     <div class="form-group">
                         <label>Nominal</label>
-                        <input type="number" id="income-amount" placeholder="0" min="1" required>
+                        <input type="text" id="income-amount" placeholder="0" oninput="window.handleAmountInput(event)" required>
                     </div>
                     <div class="modal-footer">
                         <button type="button" id="btn-cancel-income" class="btn-danger">Batalkan</button>

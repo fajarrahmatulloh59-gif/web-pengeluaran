@@ -43,6 +43,41 @@ let incomes = [];
 let archives = [];
 let yearlyArchives = [];
 let currentUser = null;
+let inactivityTimer;
+
+// --- Auto Logout Logic (15 Detik) ---
+function resetInactivityTimer() {
+    if (!currentUser) return;
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(async () => {
+        if (currentUser) {
+            console.log("Inactivity detected. Logging out...");
+            await signOut(auth);
+            window.location.reload();
+        }
+    }, 15000); // 15 detik
+}
+
+// Pantau aktivitas user
+['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+    document.addEventListener(event, resetInactivityTimer, true);
+});
+
+// --- Formatting Rupiah Input Logic ---
+function formatNumberWithDots(number) {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+function unformatNumber(string) {
+    return parseFloat(string.replace(/\./g, '')) || 0;
+}
+
+function handleAmountInput(e) {
+    let value = e.target.value.replace(/\D/g, ""); // Ambil hanya angka
+    if (value) {
+        e.target.value = formatNumberWithDots(value);
+    }
+}
 
 // DOM Elements
 const loginPage = document.getElementById('login-page');
@@ -262,6 +297,8 @@ function updateTotal() {
     if (totalMonthlyDisplay) totalMonthlyDisplay.textContent = formatRupiah(monthlyExp);
     if (totalYearlyDisplay) totalYearlyDisplay.textContent = formatRupiah(yearlyExp);
 }
+
+window.handleAmountInput = handleAmountInput;
 
 // --- CRUD Actions ---
 
@@ -580,7 +617,7 @@ function addRow() {
         <div class="form-group"><label>Tanggal</label><input type="date" name="date" value="${getTodayDate()}" required></div>
         <div class="form-group"><label>Deskripsi</label><input type="text" name="description" placeholder="Beli apa?" required></div>
         <div class="form-group"><label>Jenis</label><select name="category" required><option value="Makanan">Makanan</option><option value="Transportasi">Transportasi</option><option value="Belanja">Belanja</option><option value="Tagihan">Tagihan</option><option value="Lainnya">Lainnya</option></select></div>
-        <div class="form-group"><label>Nominal</label><input type="number" name="amount" placeholder="0" min="1" required></div>
+        <div class="form-group"><label>Nominal</label><input type="text" name="amount" placeholder="0" oninput="window.handleAmountInput(event)" required></div>
         <div class="form-group"><label>Metode</label><select name="payment" required><option value="Cash">Cash</option><option value="Transfer">Transfer</option><option value="QRIS">QRIS</option><option value="E-Wallet">E-Wallet</option></select></div>
         <button type="button" class="btn-remove-row" onclick="window.removeRow(this)">&times;</button>
     `;
@@ -607,11 +644,12 @@ if (multiRecordForm) {
         const batchPromise = [];
         
         rows.forEach(row => {
+            const amountRaw = row.querySelector('[name="amount"]').value;
             const newRecord = {
                 date: row.querySelector('[name="date"]').value,
                 description: row.querySelector('[name="description"]').value,
                 category: row.querySelector('[name="category"]').value,
-                amount: parseFloat(row.querySelector('[name="amount"]').value),
+                amount: unformatNumber(amountRaw), // Ubah kembali ke angka murni
                 payment: row.querySelector('[name="payment"]').value,
                 timestamp: serverTimestamp()
             };
@@ -636,12 +674,12 @@ if (incomeForm) {
         e.preventDefault();
         const dateVal = document.getElementById('income-date').value;
         const descVal = document.getElementById('income-description').value;
-        const amountVal = document.getElementById('income-amount').value;
+        const amountRaw = document.getElementById('income-amount').value;
         
         const newIncome = {
             date: dateVal,
             description: descVal,
-            amount: parseFloat(amountVal),
+            amount: unformatNumber(amountRaw),
             timestamp: serverTimestamp()
         };
 
