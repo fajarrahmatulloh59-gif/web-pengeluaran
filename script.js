@@ -20,14 +20,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // --- KONFIGURASI FIREBASE ---
-const firebaseConfig = {
-    apiKey: "AIzaSyBR5HZ7Y3vpXHIKVsvkClZeKDastUMJQWI",
-    authDomain: "web-pengeluaran.firebaseapp.com",
-    projectId: "web-pengeluaran",
-    storageBucket: "web-pengeluaran.firebasestorage.app",
-    messagingSenderId: "615532747927",
-    appId: "1:615532747927:web:0e44573c3078599b4b9dd2",
-    measurementId: "G-HEKBPSVC1W"
+// Ganti dengan konfigurasi dari Firebase Console Anda
+ const firebaseConfig = {
+   apiKey: "AIzaSy...",
+   authDomain: "project-anda.firebaseapp.com",
+   projectId: "project-anda",
+   storageBucket: "project-anda.appspot.com",
+   messagingSenderId: "1234567890",
+   appId: "1:1234567890:web:abcdef"
 };
 
 
@@ -280,12 +280,17 @@ window.deleteIncome = async (id) => {
 // --- Archive & PDF Logic ---
 
 function checkEndOfMonth() {
-    if (expenses.length === 0 && incomes.length === 0) return;
+    // Jika tidak ada data pengeluaran sama sekali, banner HARUS disembunyikan
+    if (expenses.length === 0) {
+        if (archiveBanner) archiveBanner.style.display = 'none';
+        return;
+    }
 
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
+    // Periksa apakah ada data yang bulannya atau tahunnya sudah lewat
     const hasOldData = expenses.some(item => {
         const itemDate = new Date(item.date);
         return itemDate.getMonth() !== currentMonth || itemDate.getFullYear() !== currentYear;
@@ -293,6 +298,8 @@ function checkEndOfMonth() {
 
     if (hasOldData && archiveBanner) {
         archiveBanner.style.display = 'flex';
+    } else if (archiveBanner) {
+        archiveBanner.style.display = 'none';
     }
 }
 
